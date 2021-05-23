@@ -29,7 +29,7 @@ describe('VisitorsController', () => {
 
   describe('test getMuseumVisitors method',() => {
     it('success response',async ()=>{
-        const date = 1443637800000;
+        const date = '1443637800000';
         const ignoredMuseum = 'avila_adobe';
         const result = {
           attendance: {

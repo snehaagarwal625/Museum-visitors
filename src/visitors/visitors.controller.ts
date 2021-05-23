@@ -10,8 +10,8 @@ export class VisitorsController {
    *  @ignoredMuseum - Query param passed to the function denoting a museum to ignore
    */
   async getMuseumVisitors(
-    @Query('date') date,
-    @Query('ignore') ignoredMuseum,
+    @Query('date') date: string,
+    @Query('ignore') ignoredMuseum: string,
   ): Promise<any> {
     const result = await this.visitorsService.getMuseumVisitors(
       date,

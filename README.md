@@ -24,7 +24,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[Nest](https://github.com/nestjs/nest) developed API.
 
 ## Installation
 
@@ -50,9 +50,6 @@ $ npm run start:prod
 ```bash
 # unit tests
 $ npm run test
-
-# e2e tests
-$ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
@@ -105,6 +102,4 @@ $ Coverage is done using Istanbul
        “total”: number
     }
 }
-
-
 ```
