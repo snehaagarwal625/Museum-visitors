@@ -11,51 +11,65 @@ import { VisitorsResponse } from './visitors-response.model';
 @Injectable()
 export class VisitorsService {
   constructor(private httpService: HttpService) {}
+
   /*  *  Function that is called to fetch the api response
-        *  @date - param passed to the function denoting a date in milliseconds.
-        *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
-  */
-  async getMuseumVisitors(date, ignoredMuseum?) {
-    try {
-      if (date) {
-        let result = this.httpService
-          .get('https://data.lacity.org/resource/trxm-jn3c.json')
-          .pipe(
-            map((res) => {
-              return res.data;
-            }),
-          );
-        result = await result.toPromise();
-        date = this.convertDateFormat(parseInt(date));
-        if (result) {
-        let response;
-        result.forEach((res) => {
-            if (date === this.convertDateFormat(res.month)) {
-              response =  res;
-            }
-          });
-          if(!response){
-                throw new NotFoundException('data not found for the date it is searching for');
-          }
-          return this.mapResponse(response, date, ignoredMuseum);
-        } else {
-          throw new NotFoundException('data not found');
-        }
+   *  @date - param passed to the function denoting a date in milliseconds.
+   *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
+   */
+  async getMuseumVisitors(date: string, ignoredMuseum?: string): Promise<VisitorsResponse>{
+    if (date) {
+      date = this.convertDateFormat(parseInt(date));
+      const result = await this.fetchApiData();
+      if (result) {
+        const response = this.fetchRecordForDateProvided(result, date);
+        return this.mapResponse(response, date, ignoredMuseum);
       } else {
-        throw new BadRequestException('date not provided');
+        throw new NotFoundException('data not found');
       }
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
+    } else {
+      throw new BadRequestException('date not provided');
     }
   }
 
+  //  *  Function that helps to fetch the record from external API
+  async fetchApiData(): Promise<any> {
+    let result = this.httpService
+      .get('https://data.lacity.org/resource/trxm-jn3c.json')
+      .pipe(
+        map((res) => {
+          return res.data;
+        }),
+      );
+    result = await result.toPromise();
+    return result;
+  }
+
+  /*  *  Function that helps to fetch the data for particular date provided
+   *  @result - param passed to the function denoting the result received from the external api
+   *  @date - param passed to the function denoting a date in milliseconds.
+   */
+  fetchRecordForDateProvided(result: any, date: string): any {
+    let response;
+    result.forEach((res) => {
+      if (date === this.convertDateFormat(res.month)) {
+        response = res;
+      }
+    });
+    if (!response) {
+      throw new NotFoundException(
+        'data not found for the date it is searching for',
+      );
+    }
+    return response;
+  }
+
   /*  *  Function that helps to map the result to the actual response structure
-        *  @result - param passed to the function denoting the result received from the external api
-        *  @date - param passed to the function denoting a date in milliseconds.
-        *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
-    */
-  mapResponse(result, date, ignoredMuseum?) {
-    const response = this.calculateResponse(result, ignoredMuseum);
+   *  @result - param passed to the function denoting the result received from the external api
+   *  @date - param passed to the function denoting a date in milliseconds.
+   *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
+   */
+  mapResponse(result: any, date: string, ignoredMuseum?: string): VisitorsResponse {
+    const response = this.calculateResponseValues(result, ignoredMuseum);
     const res: VisitorsResponse = {
       attendance: {
         month: date.split(' ')[1],
@@ -71,7 +85,7 @@ export class VisitorsService {
         total: response.totalVisitors,
       },
     };
-    if(ignoredMuseum){
+    if (ignoredMuseum) {
       res.attendance.ignored = {
         museum: ignoredMuseum,
         visitors: response.ignoredVisitor,
@@ -79,18 +93,19 @@ export class VisitorsService {
     }
     return res;
   }
+
   /*  *  Function that helps to calculate some values w.r.t the response
-        *  @result - param passed to the function denoting the result received from the external api
-        *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
-    */
-  calculateResponse(result, ignoredMuseum?) {
+   *  @result - param passed to the function denoting the result received from the external api
+   *  @ignoredMuseum - Optional param passed to the function denoting a museum to ignore
+   */
+  calculateResponseValues(result: any, ignoredMuseum?: string): any {
     let computedValue = {
       highestVisitor: 0,
       highMuseumName: '',
       lowMuseumName: '',
       ignoredVisitor: 0,
       totalVisitors: 0,
-      lowestVisitor:Number.MAX_SAFE_INTEGER 
+      lowestVisitor: Number.MAX_SAFE_INTEGER,
     };
     for (let i in result) {
       if (i != 'month' && i != ignoredMuseum) {
@@ -105,17 +120,18 @@ export class VisitorsService {
         }
       } else if (ignoredMuseum && i == ignoredMuseum) {
         computedValue.ignoredVisitor = parseInt(result[i]);
-      } 
+      }
     }
-    if(!(ignoredMuseum in result)){
-      throw new NotFoundException("ignored museum not found");
+    if (ignoredMuseum && !result[ignoredMuseum]) {
+      throw new NotFoundException('ignored museum not found');
     }
     return computedValue;
   }
+
   /*  *  Function that helps to convert date format
-        *  @input - param passed to the function denoting the date 
-    */
-  convertDateFormat(input) {
+   *  @input - param passed to the function denoting the date
+   */
+  convertDateFormat(input: number): string {
     let date = new Date(input);
     return date.toDateString();
   }

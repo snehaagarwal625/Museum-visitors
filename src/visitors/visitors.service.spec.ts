@@ -26,7 +26,7 @@ describe('VisitorsService', () => {
 
   describe('test getMuseumVisitors method', () => {
     it('success response', async () => {
-      const date = 1443637800000;
+      const date = '1443637800000';
       const ignoredMuseum = 'avila_adobe';
       const result = {
         attendance: {
@@ -81,7 +81,7 @@ describe('VisitorsService', () => {
       );
     });
     it('internal server error response', async () => {
-      const date = 1443637800000;
+      const date = '1443637800000';
       const ignoredMuseum = 'avila_adobe';
       const response: AxiosResponse = {
         data: [
